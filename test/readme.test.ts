@@ -29,4 +29,16 @@ describe("README instalasi", () => {
     expect(readme).toMatch(/token/i);
     expect(readme).toMatch(/tidak ditaruh/i);
   });
+
+  it("default functionsPath tidak menggandakan /functions/v1", () => {
+    expect(readme).toContain("| `functionsPath` | `/asya-mcp` |");
+    expect(readme).not.toContain(
+      "| `functionsPath` | `/functions/v1/asya-mcp` |",
+    );
+    expect(readme).toContain("`<url>/asya-mcp/mcp`");
+  });
+
+  it("troubleshooting membedakan 404 enroll dari 404 tool MCP", () => {
+    expect(readme).toMatch(/Enroll gagal: HTTP 404/);
+  });
 });

@@ -17,6 +17,17 @@ export interface EnrollOptions {
 }
 
 const CODE_PATTERN = /^[A-Z2-9]{8}$/;
+// Kode harus token berdiri sendiri; substring dari teks lain ditolak.
+const COMMAND_CODE_PATTERN = /(?:^|\s)([A-Z2-9]{8})(?=\s|$)/;
+
+export function extractEnrollCode(text: string): string | null {
+  return COMMAND_CODE_PATTERN.exec(text.trim())?.[1] ?? null;
+}
+
+// Konstruksi URL dipisahkan supaya bisa diuji tanpa runtime OpenCode.
+export function buildEnrollUrl(options: EnrollOptions): string {
+  return `${options.url}${options.functionsPath}/enroll`;
+}
 
 export async function enroll(
   code: string,
@@ -26,7 +37,7 @@ export async function enroll(
   if (!CODE_PATTERN.test(trimmed)) {
     throw new Error("Kode enrollasi tidak valid: harus 8 karakter [A-Z2-9].");
   }
-  const response = await fetch(`${options.url}${options.functionsPath}/enroll`, {
+  const response = await fetch(buildEnrollUrl(options), {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ code: trimmed }),

@@ -10,9 +10,8 @@
 //   lewat header MCP (oauth: false).
 
 import { Plugin } from "@opencode/plugin";
-import { enroll, type EnrollResponse } from "./enroll.ts";
-
-const ENROLL_CODE_PATTERN = /([A-Z2-9]{8})/;
+import { enroll, extractEnrollCode, type EnrollResponse } from "./enroll.ts";
+import { resolveOptions } from "./options.ts";
 
 type McpMetadata = {
   tokenPrefix: string;
@@ -47,16 +46,8 @@ function extractToken(credential: unknown): string | null {
 export default Plugin.define({
   id: "asya-mcp",
   async setup(ctx) {
-    // Opsi dari plugin config: url wajib; default sisanya sesuai spec.
-    const pluginOptions = ((ctx.options ?? {}) as Record<string, unknown>);
-    const url = typeof pluginOptions.url === "string" ? pluginOptions.url : "";
-    if (!url) {
-      throw new Error("Plugin asya-mcp butuh opsi `url` (URL Supabase functions).");
-    }
-    const functionsPath =
-      (pluginOptions.functionsPath as string | undefined) ?? "/functions/v1/asya-mcp";
-    const serverName = (pluginOptions.serverName as string | undefined) ?? "asya-core";
-    const mcpUrl = (pluginOptions.mcpUrl as string | undefined) ?? `${url}/mcp`;
+    // Opsi dari plugin config: `url` wajib; default lain di resolveOptions.
+    const { url, functionsPath, serverName, mcpUrl } = resolveOptions(ctx.options);
 
     // Metadata non-secret dari sesi sebelumnya (bukan token).
     metadata = ((await ctx.storage.get("asya-mcp")) ?? {}) as McpMetadata;
@@ -93,7 +84,7 @@ export default Plugin.define({
     // /asya-connect & /asya-rotate-token — eksekutor identik: tukar kode
     // enrollasi → credential → MCP reload.
     const enrollCommand = async (prompt: { text?: string }): Promise<string> => {
-      const code = ENROLL_CODE_PATTERN.exec(prompt.text ?? "")?.[0];
+      const code = extractEnrollCode(prompt.text ?? "");
       if (!code) {
         throw new Error(
           "Kode enrollasi tidak ditemukan (8 karakter [A-Z2-9] di argumen perintah).",

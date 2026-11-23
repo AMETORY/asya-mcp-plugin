@@ -37,9 +37,13 @@ Tambahkan paket ini ke `opencode.jsonc`:
 
 | Opsi | Default | Fungsi |
 | --- | --- | --- |
-| `functionsPath` | `/functions/v1/asya-mcp` | Path edge function |
+| `functionsPath` | `/asya-mcp` | Path edge function relatif terhadap `url` |
 | `serverName` | `asya-core` | Nama server MCP yang didaftarkan |
-| `mcpUrl` | `<url>/mcp` | URL server MCP |
+| `mcpUrl` | `<url>/asya-mcp/mcp` | URL server MCP |
+
+`url` sudah mengandung `/functions/v1`, jadi `functionsPath` tidak boleh
+mengulang segmen itu. Hasil akhir enroll:
+`https://<project>.supabase.co/functions/v1/asya-mcp/enroll`.
 
 Simpan file config, lalu jalankan `/reload` di OpenCode. Plugin hanya perlu
 dipasang sekali; kredensial tidak perlu ditambahkan ke config.
@@ -80,6 +84,11 @@ Salin 43 karakter yang dihasilkan (tanpa `wc -c`) ke Supabase Dashboard →
 Edge Functions → Secrets → `MCP_TOKEN_ENCRYPTION_KEY`, lalu deploy ulang
 `asya-mcp`. Jangan pakai `openssl rand -base64 32` apa adanya: keluarannya
 mengandung `=` dan ditolak decoder.
+
+**`Enroll gagal: HTTP 404`.** Ini beda dengan 404 tool MCP di bawah. Periksa
+`url` dan `functionsPath`: keduanya tidak boleh menggandakan `/functions/v1`.
+Dengan konfigurasi bawaan, hasilnya harus
+`https://<project>.supabase.co/functions/v1/asya-mcp/enroll`.
 
 **Plugin gagal dimuat setelah `/reload`.** Pastikan repo publik tersedia dan
 OpenCode bisa mengambil paket dari GitHub. Periksa log OpenCode untuk pesan

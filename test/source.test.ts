@@ -20,12 +20,12 @@ describe("sumber plugin", () => {
   const src = read("src/index.ts");
   const enrollSrc = read("src/enroll.ts");
 
-  it("url wajib", () => {
-    expect(src).toContain("Plugin asya-mcp butuh opsi `url`");
+  it("url wajib divalidasi oleh resolver opsi", () => {
+    expect(read("src/options.ts")).toContain("Plugin asya-mcp butuh opsi `url`");
   });
 
   it("validasi kode enroll sebelum fetch", () => {
-    expect(src).toContain("ENROLL_CODE_PATTERN.exec");
+    expect(src).toContain("extractEnrollCode(");
     expect(src).toContain("Kode enrollasi tidak ditemukan");
     expect(enrollSrc).toContain("^[A-Z2-9]{8}$");
   });
