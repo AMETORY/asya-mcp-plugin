@@ -112,29 +112,47 @@ export default Plugin.define({
         serverName: metadata.serverName,
       });
       await applyMcp();
-      return "asya-core token tersedia. Gunakan /asya-status untuk melihat status.";
+      // Metadata-only: jangan pernah memasukkan token/kode ke pesan.
+      return `asya-core tersambung sebagai ${result.name} (org ${result.organization_id}).`;
+    };
+
+    // CommandDefinition.execute bertipe Promise<void>: nilai balikan executor
+    // tidak dirender TUI. Umpan balik harus dikirim sebagai pesan sesi.
+    const runEnroll = async (input: {
+      sessionID: string;
+      prompt: { text?: string };
+    }): Promise<void> => {
+      try {
+        const text = await enrollCommand(input.prompt);
+        await ctx.session.synthetic({ sessionID: input.sessionID, text });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        await ctx.session.synthetic({
+          sessionID: input.sessionID,
+          text: `Gagal menghubungkan asya-core: ${reason}`,
+        });
+      }
     };
 
     ctx.command.transform((editor) => {
       editor.add({
         name: "asya-connect",
         description: "Enroll asya-core MCP token dengan kode enrollasi (8 kar).",
-        execute: async (input) => {
-          await enrollCommand(input.prompt);
-        },
+        execute: (input) => runEnroll(input),
       });
       editor.add({
         name: "asya-rotate-token",
         description: "Rotasi asya-core MCP token dengan kode enrollasi baru.",
-        execute: async (input) => {
-          await enrollCommand(input.prompt);
-        },
+        execute: (input) => runEnroll(input),
       });
       editor.add({
         name: "asya-status",
         description: "Cek metadata enrollment asya-core MCP (tanpa token).",
-        execute: async () => {
-          console.log("[asya] asya-status:", JSON.stringify(metadata));
+        execute: async (input) => {
+          const text = metadata
+            ? `asya-core: ${metadata.name} · org ${metadata.organizationId} · enroll ${metadata.enrolledAt} · prefix ${metadata.tokenPrefix}`
+            : "asya-core belum terenroll.";
+          await ctx.session.synthetic({ sessionID: input.sessionID, text });
         },
       });
     });
