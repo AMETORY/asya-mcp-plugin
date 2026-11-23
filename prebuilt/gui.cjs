@@ -45,6 +45,7 @@ var import_rpc = require("@opencode/plugin/rpc");
 var metadataProperties = {
   name: { type: "string" },
   organizationId: { type: "string" },
+  organizationName: { type: "string" },
   enrolledAt: { type: "string" },
   tokenPrefix: { type: "string" }
 };
@@ -124,7 +125,7 @@ var gui_default = import_gui.Plugin.define({
           const result = await rpc.connect({ code });
           ctx.toast.show({
             title: "asya-core",
-            description: `Terhubung: ${result.name ?? "-"} (organisasi ${result.organizationId ?? "-"}).`,
+            description: `Terhubung: ${result.name ?? "-"} (organisasi ${result.organizationName ?? result.organizationId ?? "-"}).`,
             variant: "success"
           });
         } catch (error) {
@@ -144,7 +145,7 @@ var gui_default = import_gui.Plugin.define({
           const result = await rpc.rotate({ code });
           ctx.toast.show({
             title: "asya-core",
-            description: `Token dirotasi: ${result.name ?? "-"} (organisasi ${result.organizationId ?? "-"}).`,
+            description: `Token dirotasi: ${result.name ?? "-"} (organisasi ${result.organizationName ?? result.organizationId ?? "-"}).`,
             variant: "success"
           });
         } catch (error) {
@@ -170,7 +171,7 @@ var gui_default = import_gui.Plugin.define({
           }
           ctx.toast.show({
             title: "asya-core",
-            description: `Terhubung: ${result.name ?? "-"} (organisasi ${result.organizationId ?? "-"}).`,
+            description: `Terhubung: ${result.name ?? "-"} (organisasi ${result.organizationName ?? result.organizationId ?? "-"}).`,
             variant: "success"
           });
         } catch (error) {

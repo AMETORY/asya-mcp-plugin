@@ -116,7 +116,14 @@ export default Plugin.define({
         serverName,
       };
       // Metadata-only ke ctx.storage — tanpa `token`, tanpa `enrollmentCode`.
-      await ctx.storage.set("asya-mcp", { ...metadata });
+      await ctx.storage.set("asya-mcp", {
+        tokenPrefix: metadata.tokenPrefix,
+        name: metadata.name,
+        enrolledAt: metadata.enrolledAt,
+        organizationId: metadata.organizationId,
+        ...(metadata.organizationName ? { organizationName: metadata.organizationName } : {}),
+        serverName: metadata.serverName,
+      });
       await applyMcp();
       const { name, organizationId, organizationName, enrolledAt, tokenPrefix } = metadata;
       return {
@@ -142,7 +149,14 @@ export default Plugin.define({
           if (resolved) {
             organizationName = resolved;
             metadata = { ...metadata, organizationName: resolved };
-            await ctx.storage.set("asya-mcp", { ...metadata });
+            await ctx.storage.set("asya-mcp", {
+              tokenPrefix: metadata.tokenPrefix,
+              name: metadata.name,
+              enrolledAt: metadata.enrolledAt,
+              organizationId: metadata.organizationId,
+              organizationName: resolved,
+              serverName: metadata.serverName,
+            });
           }
         }
         const { name, organizationId, enrolledAt, tokenPrefix } = metadata;

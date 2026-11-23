@@ -21,6 +21,7 @@ describe("kontrak RPC asya", () => {
         "enrolledAt",
         "name",
         "organizationId",
+        "organizationName",
         "tokenPrefix",
       ]);
       expect(out.required?.slice().sort()).toEqual([
@@ -57,6 +58,7 @@ describe("kontrak RPC asya", () => {
       "enrolledAt",
       "name",
       "organizationId",
+      "organizationName",
       "tokenPrefix",
     ]);
     expect(out.required).toEqual(["connected"]);

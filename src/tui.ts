@@ -57,7 +57,7 @@ export default Plugin.define({
               const result = await rpc.connect({ code });
               context.ui.toast.show({
                 title: "asya-core",
-                message: `Terhubung: ${result.name ?? "-"} (organisasi ${result.organizationId ?? "-"}).`,
+                message: `Terhubung: ${result.name ?? "-"} (organisasi ${(result.organizationName ?? result.organizationId) ?? "-"}).`,
                 variant: "success",
               });
             } catch (error) {
@@ -77,7 +77,7 @@ export default Plugin.define({
               const result = await rpc.rotate({ code });
               context.ui.toast.show({
                 title: "asya-core",
-                message: `Token dirotasi: ${result.name ?? "-"} (organisasi ${result.organizationId ?? "-"}).`,
+                message: `Token dirotasi: ${result.name ?? "-"} (organisasi ${(result.organizationName ?? result.organizationId) ?? "-"}).`,
                 variant: "success",
               });
             } catch (error) {
@@ -103,7 +103,7 @@ export default Plugin.define({
               }
               context.ui.toast.show({
                 title: "asya-core",
-                message: `Terhubung: ${result.name ?? "-"} (organisasi ${result.organizationId ?? "-"}).`,
+                message: `Terhubung: ${result.name ?? "-"} (organisasi ${(result.organizationName ?? result.organizationId) ?? "-"}).`,
                 variant: "success",
               });
             } catch (error) {
