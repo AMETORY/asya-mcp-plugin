@@ -82,8 +82,8 @@ describe("README instalasi", () => {
     expect(readme).toContain("<TOKEN>");
   });
 
-  it("mendokumentasikan alur OAuth browser sebagai cara disarankan", () => {
-    expect(readme).toMatch(/Cara disarankan: OAuth lewat browser/i);
+  it("mendokumentasikan alur OAuth browser sebagai opsi setelah rollout", () => {
+    expect(readme).toMatch(/Opsi OAuth lewat browser/i);
     expect(readme).toContain(
       "--url https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp",
     );
