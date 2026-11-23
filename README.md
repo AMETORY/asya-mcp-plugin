@@ -50,6 +50,25 @@ mengulang segmen itu. Hasil akhir enroll:
 Simpan file config, lalu jalankan `/reload` di OpenCode. Plugin hanya perlu
 dipasang sekali; kredensial tidak perlu ditambahkan ke config.
 
+### Alternatif tanpa plugin: `opencode mcp add`
+
+Bila token sudah dibuat dari **Generate Token** di dashboard dan alur enroll
+plugin tidak dipakai, daftarkan server langsung lewat CLI:
+
+```bash
+export ASYA_MCP_TOKEN='<TOKEN>'
+opencode mcp add asya-core --global \
+  --url https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp \
+  --header 'Authorization=Bearer {env:ASYA_MCP_TOKEN}'
+opencode mcp list
+```
+
+`{env:ASYA_MCP_TOKEN}` diresolve saat runtime, jadi token tidak tertulis di
+`opencode.jsonc`. Karena endpoint ini memakai bearer token bukan OAuth, tambahkan
+`"oauth": false` pada entri `mcp.servers["asya-core"]` di config — CLI `mcp add`
+belum punya flag untuk itu. Pakai cara ini hanya bila plugin tidak dipakai:
+alur enroll plugin sudah mendaftarkan server bernama `asya-core` otomatis.
+
 ## Pemakaian
 
 | Perintah | Fungsi |
@@ -72,8 +91,10 @@ chat. Menjalankan `opencode` di terminal **tanpa `--standalone`** tetap didukung
 dan memakai service yang sama dengan Desktop.
 
 Desktop memuat bundle CommonJS yang sudah di-build di `prebuilt/gui.cjs` (bukan
-sumber `.ts`). Setelah mengubah `src/gui.ts`, jalankan `npm run build` lalu commit
-ulang bundle tersebut agar pengguna yang meng-update plugin mendapat versi baru.
+sumber `.ts`). Setelah mengubah `src/gui.ts`, jalankan `npm run build:gui` lalu
+commit ulang bundle tersebut agar pengguna yang meng-update plugin mendapat versi
+baru. Nama script sengaja bukan `build` agar npm tidak menjalankan git-dep
+preparation saat OpenCode menginstal plugin dari GitHub.
 
 Alur yang disarankan:
 

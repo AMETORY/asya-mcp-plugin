@@ -60,6 +60,13 @@ describe("README instalasi", () => {
     expect(readme).toMatch(/OpenCode Desktop/);
   });
 
+  it("mendokumentasikan opencode mcp add memakai env var", () => {
+    expect(readme).toContain("opencode mcp add asya-core");
+    expect(readme).toContain("{env:ASYA_MCP_TOKEN}");
+    expect(readme).toContain('"oauth": false');
+    expect(readme).toContain("opencode mcp list");
+  });
+
   it("mendokumentasikan dukungan slash command di Desktop", () => {
     expect(readme).toContain("Terminal vs Desktop");
     expect(readme).toMatch(/Desktop.{0,80}slash command/s);
