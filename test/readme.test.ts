@@ -82,6 +82,18 @@ describe("README instalasi", () => {
     expect(readme).toContain("<TOKEN>");
   });
 
+  it("mendokumentasikan alur OAuth browser sebagai cara disarankan", () => {
+    expect(readme).toMatch(/Cara disarankan: OAuth lewat browser/i);
+    expect(readme).toContain(
+      "--url https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp",
+    );
+    expect(readme).toContain("resource_metadata");
+    expect(readme).toContain("ASYA_OAUTH_SIGNING_KEY");
+    expect(readme).toContain("ASYA_OAUTH_COOKIE_KEY");
+    expect(readme).toContain("<issuer>/return/otp");
+    expect(readme).toContain("organization_id");
+  });
+
   it("tidak mengandung token atau kode enrollasi nyata", () => {
     expect(readme).not.toMatch(/asya_mcp[A-Za-z0-9_-]{12,}/);
     expect(readme).not.toMatch(/Bearer\s+[A-Za-z0-9_-]{20,}/);

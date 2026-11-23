@@ -41,7 +41,7 @@ function makeHarness() {
     },
     mcp: {
       transform: vi.fn(async (cb: (editor: unknown) => void) => {
-        cb({ set: vi.fn(), update: vi.fn(), remove: vi.fn() });
+        cb({ get: vi.fn().mockReturnValue(undefined), set: vi.fn(), update: vi.fn(), remove: vi.fn() });
         return registration;
       }),
       reload: vi.fn().mockResolvedValue(undefined),

@@ -50,10 +50,36 @@ mengulang segmen itu. Hasil akhir enroll:
 Simpan file config, lalu jalankan `/reload` di OpenCode. Plugin hanya perlu
 dipasang sekali; kredensial tidak perlu ditambahkan ke config.
 
-### Alternatif tanpa plugin: `opencode mcp add`
+### Cara disarankan: OAuth lewat browser (tanpa token manual)
 
-Bila token sudah dibuat dari **Generate Token** di dashboard dan alur enroll
-plugin tidak dipakai, daftarkan server langsung lewat CLI:
+Untuk OpenCode yang mendukung OAuth MCP, cukup daftarkan URL server lalu
+masuk lewat browser — tidak perlu menyalin bearer token ke chat maupun config:
+
+```bash
+opencode mcp add --global asya-core \
+  --url https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp
+```
+
+Saat server mengembalikan `401`, OpenCode membaca `resource_metadata` dari header
+`WWW-Authenticate`, menemukan metadata authorization server, lalu membuka halaman
+login ASYA. Masukkan email ASYA; tautan sekali pakai dikirim ke email (pilihan
+Google tersedia bila diaktifkan admin). Setelah sign-in, OpenCode menyimpan token
+OAuth-nya sendiri dan memanggil tool secara otomatis.
+
+- `organization_id` wajib disertakan saat memanggil tool dalam mode OAuth,
+  misalnya `asya_list_recent_journals({ "organization_id": "<uuid>", "limit": 1 })`.
+  Nilainya dibatasi hanya pada organisasi yang masih aktif untuk akun Anda.
+- Kredensial OAuth dikelola OpenCode. Plugin tidak menimpa entri `asya-core`
+  hasil `opencode mcp add` maupun entri OAuth yang sudah ada.
+- Mode OAuth tersedia setelah migration `20261123000002_asya_mcp_oauth.sql`
+  dan secret `ASYA_OAUTH_SIGNING_KEY`, `ASYA_OAUTH_COOKIE_KEY` terpasang di edge
+  function. Redirect URL `<issuer>/return/otp` dan `<issuer>/return/google`
+  juga harus didaftarkan di Supabase Dashboard → Authentication → URL Configuration.
+
+### Alternatif tanpa plugin: token via `opencode mcp add`
+
+Bila OAuth tidak tersedia atau token sudah dibuat dari **Generate Token** di
+dashboard, daftarkan server langsung lewat CLI:
 
 ```bash
 export ASYA_MCP_TOKEN='<TOKEN>'

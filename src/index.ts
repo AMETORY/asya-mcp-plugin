@@ -21,6 +21,10 @@ type McpMetadata = AsyaMetadata & { serverName: string };
 // Token dalam memori. Tidak ditulis ke ctx.storage, tool output, atau log.
 let token: string | null = null;
 let metadata: McpMetadata | undefined;
+// Apakah entri MCP `serverName` dibuat oleh plugin ini pada sesi berjalan.
+// Dipakai supaya enroll/rotate tidak menimpa entri hasil `opencode mcp add`
+// ataupun entri OAuth yang dikelola OpenCode sendiri.
+let mcpManagedByPlugin = false;
 
 // Defensive credential extract — untuk response OpenCode yang bentuknya
 // bisa { key: string }, { value: string }, { token: string }, atau plain string.
@@ -70,12 +74,18 @@ export default Plugin.define({
     const applyMcp = async (): Promise<void> => {
       await ctx.mcp.transform((editor) => {
         if (!token) return;
+        const existing = editor.get(serverName);
+        // Entri dari `opencode mcp add` / OAuth adalah milik OpenCode. Jangan
+        // ditimpa: mode OAuth sudah menyimpan kredensialnya sendiri dan tidak
+        // butuh bearer token dari plugin.
+        if (existing && !mcpManagedByPlugin) return;
         editor.set(serverName, {
           type: "remote",
           url: mcpUrl,
           oauth: false,
           headers: { Authorization: `Bearer ${token}` },
         });
+        mcpManagedByPlugin = true;
       });
       await ctx.mcp.reload();
     };

@@ -55,6 +55,13 @@ describe("sumber plugin", () => {
     expect(src).toContain("ctx.rpc.register(Asya");
   });
 
+  it("tidak menimpa entri MCP existing dari opencode mcp add / OAuth", () => {
+    expect(src).toContain("mcpManagedByPlugin");
+    expect(src).toContain("editor.get(serverName)");
+    expect(src).toContain("if (existing && !mcpManagedByPlugin) return;");
+    expect(src).toContain("mcpManagedByPlugin = true;");
+  });
+
   it("RPC tidak mengembalikan token", () => {
     expect(read("src/rpc.ts")).not.toContain("token:");
   });
