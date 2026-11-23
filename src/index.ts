@@ -149,14 +149,20 @@ export default Plugin.define({
           if (resolved) {
             organizationName = resolved;
             metadata = { ...metadata, organizationName: resolved };
-            await ctx.storage.set("asya-mcp", {
-              tokenPrefix: metadata.tokenPrefix,
-              name: metadata.name,
-              enrolledAt: metadata.enrolledAt,
-              organizationId: metadata.organizationId,
-              organizationName: resolved,
-              serverName: metadata.serverName,
-            });
+            // Cache nama bersifat opsional: kegagalan tulis tidak boleh
+            // mengubah status `connected: true` yang sudah diketahui.
+            try {
+              await ctx.storage.set("asya-mcp", {
+                tokenPrefix: metadata.tokenPrefix,
+                name: metadata.name,
+                enrolledAt: metadata.enrolledAt,
+                organizationId: metadata.organizationId,
+                organizationName: resolved,
+                serverName: metadata.serverName,
+              });
+            } catch {
+              /* cache opsional, abaikan */
+            }
           }
         }
         const { name, organizationId, enrolledAt, tokenPrefix } = metadata;

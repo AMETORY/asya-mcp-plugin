@@ -14,6 +14,23 @@ function timeoutSignal(): AbortSignal | undefined {
   return typeof factory === "function" ? factory(TIMEOUT_MS) : undefined;
 }
 
+function nameFromMessage(message: RpcMessage): string | null {
+  const content = message.result?.content;
+  if (!Array.isArray(content)) return null;
+  const text = content.find(
+    (entry) => entry?.type === "text" && typeof entry.text === "string",
+  )?.text;
+  if (!text) return null;
+
+  try {
+    const payload = JSON.parse(text) as { name?: unknown };
+    if (typeof payload.name !== "string") return null;
+    return payload.name.trim() ? payload.name : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function resolveOrganizationName(
   mcpUrl: string,
   token: string,
@@ -37,6 +54,8 @@ export async function resolveOrganizationName(
     if (!response.ok) return null;
 
     const body = await response.text();
+
+    // Respons SSE (bentuk saat ini): event: message + data: {...}.
     for (const line of body.split(/\r?\n/)) {
       if (!line.startsWith("data:")) continue;
       const data = line.slice(5).trim();
@@ -48,21 +67,16 @@ export async function resolveOrganizationName(
       } catch {
         continue;
       }
-      const content = message.result?.content;
-      if (!Array.isArray(content)) continue;
-      const text = content.find(
-        (entry) => entry?.type === "text" && typeof entry.text === "string",
-      )?.text;
-      if (!text) continue;
-
-      try {
-        const payload = JSON.parse(text) as { name?: unknown };
-        return typeof payload.name === "string" ? payload.name : null;
-      } catch {
-        return null;
-      }
+      const name = nameFromMessage(message);
+      if (name) return name;
     }
-    return null;
+
+    // Defensif: server bisa membalas JSON-RPC polos bila modus respons berubah.
+    try {
+      return nameFromMessage(JSON.parse(body) as RpcMessage);
+    } catch {
+      return null;
+    }
   } catch {
     return null;
   }

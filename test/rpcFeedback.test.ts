@@ -249,4 +249,39 @@ describe("handler RPC asya-core", () => {
     expect(result.organizationName).toBeUndefined();
     expect(result.organizationId).toBe("org-123");
   });
+
+  it("status tetap connected bila cache storage gagal ditulis", async () => {
+    const h = makeHarness();
+    h.storage.set("asya-mcp", {
+      name: "token uji",
+      organizationId: "org-123",
+      enrolledAt: "2026-11-23T00:00:00.000Z",
+      tokenPrefix: "asya_mcp",
+      serverName: "asya-core",
+    });
+    vi.mocked(h.ctx.integration.connection.active).mockResolvedValue({
+      integrationID: "asya-core",
+    } as never);
+    vi.mocked(h.ctx.integration.connection.resolve).mockResolvedValue({
+      key: "asya_mcp_SECRETVALUE",
+    });
+    const payload = '{"organization_id":"org-123","name":"Demo Company"}';
+    const sse = `data: {"result":{"content":[{"type":"text","text":"${payload.replace(/"/g, '\\"')}"}]}}\n\n`;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(sse, {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        }),
+      ),
+    );
+    vi.mocked(h.ctx.storage.set).mockRejectedValueOnce(new Error("disk penuh"));
+    await plugin.setup(h.ctx as never);
+
+    const result = await h.handlers()!.status({});
+
+    expect(result.connected).toBe(true);
+    expect(result.organizationName).toBe("Demo Company");
+  });
 });

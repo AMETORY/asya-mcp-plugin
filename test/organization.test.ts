@@ -3,10 +3,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const TOKEN = "asya_mcp_SECRETVALUE";
 const ORG_PAYLOAD =
   '{"organization_id":"org-1","name":"Demo Company"}';
-const SSE_OK =
-  'data: {"result":{"content":[{"type":"text","text":"' +
+const JSON_OK =
+  '{"result":{"content":[{"type":"text","text":"' +
   ORG_PAYLOAD.replace(/"/g, '\\"') +
-  '"}]},"jsonrpc":"2.0","id":2}\n\n';
+  '"}]},"jsonrpc":"2.0","id":2}';
+const SSE_OK = `data: ${JSON_OK}\n\n`;
+const SSE_EMPTY_NAME =
+  'data: {"result":{"content":[{"type":"text","text":"' +
+  '{"organization_id":"org-1","name":""}'.replace(/"/g, '\\"') +
+  '"}]}}\n\n';
 
 function sseResponse(body: string, status = 200) {
   return new Response(body, {
@@ -76,5 +81,54 @@ describe("resolveOrganizationName", () => {
     const { resolveOrganizationName } = await import("../src/organization.ts");
 
     expect(await resolveOrganizationName("https://example.test/mcp", TOKEN)).toBeNull();
+  });
+
+  it("mengabaikan baris data dengan JSON rusak lalu membaca baris valid", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(sseResponse(`data: not-json\n${SSE_OK}`)),
+    );
+    const { resolveOrganizationName } = await import("../src/organization.ts");
+
+    expect(await resolveOrganizationName("https://example.test/mcp", TOKEN)).toBe(
+      "Demo Company",
+    );
+  });
+
+  it("mengembalikan null pada HTTP 401", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(sseResponse("unauthorized", 401)),
+    );
+    const { resolveOrganizationName } = await import("../src/organization.ts");
+
+    expect(await resolveOrganizationName("https://example.test/mcp", TOKEN)).toBeNull();
+  });
+
+  it("mengembalikan null untuk nama organisasi kosong", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(sseResponse(SSE_EMPTY_NAME)),
+    );
+    const { resolveOrganizationName } = await import("../src/organization.ts");
+
+    expect(await resolveOrganizationName("https://example.test/mcp", TOKEN)).toBeNull();
+  });
+
+  it("membaca payload JSON-RPC polos tanpa pembungkus SSE", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON_OK, {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+    const { resolveOrganizationName } = await import("../src/organization.ts");
+
+    expect(await resolveOrganizationName("https://example.test/mcp", TOKEN)).toBe(
+      "Demo Company",
+    );
   });
 });
