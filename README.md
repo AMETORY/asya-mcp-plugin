@@ -32,6 +32,13 @@ Tambahkan paket ini ke `opencode.jsonc`:
 }
 ```
 
+> **Penting:** saat memakai plugin, **jangan** menambahkan blok
+> `mcp.servers["asya-core"]` ke config. Plugin yang mendaftarkan server MCP
+> secara otomatis setelah enroll. Entri statis tanpa kredensial membuat
+> `opencode mcp list` melaporkan `⚠ asya-core   needs authentication`, dan plugin
+> versi terbaru sengaja tidak menimpa entri yang sudah ada (untuk menjaga
+> kredensial OAuth). Hapus blok `mcp` bila config Anda memilikinya.
+
 `url` **wajib diisi** — plugin menolak startup tanpa opsi ini. Contoh di atas
 memakai `https://robrebioyfquemukodze.supabase.co/functions/v1`, server ASYA
 produksi yang bisa dipakai apa adanya. Untuk project Supabase sendiri, ganti
@@ -47,13 +54,46 @@ dengan `https://<project>.supabase.co/functions/v1`. Opsi lain bersifat opsional
 mengulang segmen itu. Hasil akhir enroll:
 `https://<project>.supabase.co/functions/v1/asya-mcp/enroll`.
 
-Simpan file config, lalu jalankan `/reload` di OpenCode. Plugin hanya perlu
-dipasang sekali; kredensial tidak perlu ditambahkan ke config.
+Simpan file config, lalu jalankan `/reload` di OpenCode (atau restart OpenCode).
+Plugin hanya perlu dipasang sekali; kredensial tidak perlu ditambahkan ke config.
+Pastikan plugin termuat:
 
-### Cara disarankan: OAuth lewat browser (tanpa token manual)
+```bash
+opencode plugin list          # harus menampilkan asya-mcp
+opencode plugin update github:AMETORY/asya-mcp-plugin   # bila perlu update
+```
+
+**Alur pertama kali dengan plugin:**
+
+1. Di aplikasi ASYA, buka **Pengaturan Organisasi → API Token (MCP) →
+   Generate Token**. Kode enrollasi 8 karakter hanya tampil sekali dan
+   kedaluwarsa dalam 10 menit. Jangan menempelkannya di chat.
+2. Di terminal OpenCode, ketik `/asya-connect`, lalu isi kode di dialog input
+   tersembunyi.
+3. Cek `/asya-status` dan `opencode mcp list` — status harus
+   `✓ asya-core   connected`.
+4. Bila sesi/direktori lain masih merah setelah enroll, jalankan
+   `opencode reload` di sesi tersebut.
+
+Nama slash command yang terdaftar persis `/asya-connect`,
+`/asya-rotate-token`, dan `/asya-status`. **Tidak ada perintah `/asya`** —
+mengetik `/asya` tidak akan menampilkan autocomplete.
+
+### Opsi OAuth lewat browser (hanya setelah rollout aktif)
 
 Untuk OpenCode yang mendukung OAuth MCP, cukup daftarkan URL server lalu
-masuk lewat browser — tidak perlu menyalin bearer token ke chat maupun config:
+masuk lewat browser — tidak perlu menyalin bearer token ke chat maupun config.
+
+> **Prasyarat produksi:** migration `20261123000002_asya_mcp_oauth.sql`, secret
+> `ASYA_OAUTH_SIGNING_KEY` dan `ASYA_OAUTH_COOKIE_KEY`, deploy ulang edge
+> function, serta redirect URL `<issuer>/return/otp` dan `<issuer>/return/google`
+> harus sudah terpasang. Sebelum itu server membalas `401` **tanpa** header
+> `WWW-Authenticate`, dan `opencode mcp auth asya-core` tidak akan berhasil.
+> Cek cepat:
+>
+> ```bash
+> curl -sSI https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp | grep -i www-authenticate
+> ```
 
 ```bash
 opencode mcp add --global asya-core \
@@ -71,10 +111,7 @@ OAuth-nya sendiri dan memanggil tool secara otomatis.
   Nilainya dibatasi hanya pada organisasi yang masih aktif untuk akun Anda.
 - Kredensial OAuth dikelola OpenCode. Plugin tidak menimpa entri `asya-core`
   hasil `opencode mcp add` maupun entri OAuth yang sudah ada.
-- Mode OAuth tersedia setelah migration `20261123000002_asya_mcp_oauth.sql`
-  dan secret `ASYA_OAUTH_SIGNING_KEY`, `ASYA_OAUTH_COOKIE_KEY` terpasang di edge
-  function. Redirect URL `<issuer>/return/otp` dan `<issuer>/return/google`
-  juga harus didaftarkan di Supabase Dashboard → Authentication → URL Configuration.
+- Prasyarat produksi dan cara ceknya ada di catatan di atas.
 
 ### Alternatif tanpa plugin: token via `opencode mcp add`
 
@@ -245,6 +282,16 @@ OpenCode bisa mengambil paket dari GitHub. Periksa log OpenCode untuk pesan
 **Tool MCP belum bisa dipanggil setelah enroll.** Pastikan `/asya-status`
 (atau `asya_status`) melaporkan koneksi aktif, lalu jalankan `/reload` agar
 server `asya-core` memuat ulang kredensialnya.
+
+**`opencode mcp list` melaporkan `⚠ asya-core   needs authentication`.** Entri
+`asya-core` ada tetapi tanpa kredensial. Kalau memakai plugin, hapus blok
+`mcp.servers["asya-core"]` dari config, jalankan `/reload`, lalu enroll ulang
+dengan kode baru lewat `/asya-connect`. Plugin tidak menimpa entri statis/OAuth
+yang sudah ada. Kalau memakai jalur OAuth, pastikan prasyarat di atas terpenuhi
+dan server mengirim header `WWW-Authenticate`.
+
+**`/asya` tidak muncul di autocomplete.** Itu wajar: command yang terdaftar
+hanya `/asya-connect`, `/asya-rotate-token`, dan `/asya-status`.
 
 **Autocomplete `/asya-connect` tidak muncul di OpenCode Desktop.** Pastikan paket
 sudah di-update ke versi yang mengekspor `./gui-experimental`:
