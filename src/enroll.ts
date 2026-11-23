@@ -24,6 +24,12 @@ export function extractEnrollCode(text: string): string | null {
   return COMMAND_CODE_PATTERN.exec(text.trim())?.[1] ?? null;
 }
 
+// Validasi penuh satu kode: tepat 8 karakter [A-Z2-9] setelah trim.
+// Dipakai TUI (pertahanan pertama) dan server (pertahanan kedua).
+export function isValidEnrollCode(code: string): boolean {
+  return CODE_PATTERN.test(code.trim());
+}
+
 // Konstruksi URL dipisahkan supaya bisa diuji tanpa runtime OpenCode.
 export function buildEnrollUrl(options: EnrollOptions): string {
   return `${options.url}${options.functionsPath}/enroll`;

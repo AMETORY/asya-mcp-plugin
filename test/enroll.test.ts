@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { buildEnrollUrl, enroll, extractEnrollCode } from "../src/enroll.ts";
+import {
+  buildEnrollUrl,
+  enroll,
+  extractEnrollCode,
+  isValidEnrollCode,
+} from "../src/enroll.ts";
 import { resolveOptions } from "../src/options.ts";
 
 const url = "https://example.supabase.co/functions/v1";
@@ -38,6 +43,17 @@ describe("ekstraksi kode enroll", () => {
     expect(extractEnrollCode("ABCDEFGHX")).toBeNull();
     expect(extractEnrollCode("abcABCDEFGH")).toBeNull();
     expect(extractEnrollCode("ABCDEFG2H dengan catatan")).toBeNull();
+  });
+});
+
+describe("validasi kode enrollasi", () => {
+  it("menerima kode 8 karakter [A-Z2-9] dan menolak yang lain", () => {
+    expect(isValidEnrollCode("ABCDEFG2")).toBe(true);
+    expect(isValidEnrollCode(" ABCDEFG2 ")).toBe(true);
+    expect(isValidEnrollCode("abcdefg2")).toBe(false);
+    expect(isValidEnrollCode("ABCDEFG1")).toBe(false); // digit 1 dilarang
+    expect(isValidEnrollCode("ABCDEFG")).toBe(false);
+    expect(isValidEnrollCode("")).toBe(false);
   });
 });
 
