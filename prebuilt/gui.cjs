@@ -31,6 +31,15 @@ function isValidEnrollCode(code) {
   return CODE_PATTERN.test(code.trim());
 }
 
+// src/errorMessage.ts
+function formatErrorMessage(error) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return String(error);
+}
+
 // src/rpc.ts
 var import_rpc = require("@opencode/plugin/rpc");
 var metadataProperties = {
@@ -82,7 +91,7 @@ var gui_default = import_gui.Plugin.define({
     const tampilkanError = (error) => {
       ctx.toast.show({
         title: "asya-core",
-        description: error instanceof Error ? error.message : String(error),
+        description: formatErrorMessage(error),
         variant: "error"
       });
     };
@@ -150,7 +159,7 @@ var gui_default = import_gui.Plugin.define({
       run: async () => {
         try {
           const rpc = ctx.client.rpc(Asya);
-          const result = await rpc.status();
+          const result = await rpc.status({});
           if (!result.connected) {
             ctx.toast.show({
               title: "asya-core",

@@ -2,6 +2,7 @@
 // untuk RPC, lalu dibuang — tidak pernah jadi argumen chat, storage, atau log.
 import { Plugin } from "@opencode/plugin/tui";
 import { isValidEnrollCode } from "./enroll.ts";
+import { formatErrorMessage } from "./errorMessage.ts";
 import { Asya, type AsyaMetadata } from "./rpc.ts";
 
 // Skema RPC berbentuk JSON Schema, sehingga tipe kliennya `unknown`. Di sini
@@ -9,7 +10,7 @@ import { Asya, type AsyaMetadata } from "./rpc.ts";
 type AsyaRpc = {
   connect(input: { code: string }): Promise<AsyaMetadata>;
   rotate(input: { code: string }): Promise<AsyaMetadata>;
-  status(): Promise<{ connected: boolean } & Partial<AsyaMetadata>>;
+  status(input: Record<string, never>): Promise<{ connected: boolean } & Partial<AsyaMetadata>>;
 };
 
 export default Plugin.define({
@@ -18,7 +19,7 @@ export default Plugin.define({
     const tampilkanError = (error: unknown) => {
       context.ui.toast.show({
         title: "asya-core",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatErrorMessage(error),
         variant: "error",
       });
     };
@@ -91,7 +92,7 @@ export default Plugin.define({
           run: async () => {
             try {
               const rpc = context.client.rpc(Asya) as unknown as AsyaRpc;
-              const result = await rpc.status();
+              const result = await rpc.status({});
               if (!result.connected) {
                 context.ui.toast.show({
                   title: "asya-core",
