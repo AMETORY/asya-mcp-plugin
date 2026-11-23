@@ -189,4 +189,64 @@ describe("handler RPC asya-core", () => {
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("status mengisi organizationName dari tool MCP untuk metadata lama", async () => {
+    const h = makeHarness();
+    h.storage.set("asya-mcp", {
+      name: "token uji",
+      organizationId: "org-123",
+      enrolledAt: "2026-11-23T00:00:00.000Z",
+      tokenPrefix: "asya_mcp",
+      serverName: "asya-core",
+    });
+    vi.mocked(h.ctx.integration.connection.active).mockResolvedValue({
+      integrationID: "asya-core",
+    } as never);
+    vi.mocked(h.ctx.integration.connection.resolve).mockResolvedValue({
+      key: "asya_mcp_SECRETVALUE",
+    });
+    const payload = '{"organization_id":"org-123","name":"Demo Company"}';
+    const sse = `event: message\ndata: {"result":{"content":[{"type":"text","text":"${payload.replace(/"/g, '\\"')}"}]}}\n\n`;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(sse, {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        }),
+      ),
+    );
+    await plugin.setup(h.ctx as never);
+
+    const result = await h.handlers()!.status({});
+
+    expect(result.organizationName).toBe("Demo Company");
+    expect(result.organizationId).toBe("org-123");
+    expect(JSON.stringify(h.storage.get("asya-mcp"))).not.toContain("SECRETVALUE");
+  });
+
+  it("status fallback ke UUID saat resolver gagal", async () => {
+    const h = makeHarness();
+    h.storage.set("asya-mcp", {
+      name: "token uji",
+      organizationId: "org-123",
+      enrolledAt: "2026-11-23T00:00:00.000Z",
+      tokenPrefix: "asya_mcp",
+      serverName: "asya-core",
+    });
+    vi.mocked(h.ctx.integration.connection.active).mockResolvedValue({
+      integrationID: "asya-core",
+    } as never);
+    vi.mocked(h.ctx.integration.connection.resolve).mockResolvedValue({
+      key: "asya_mcp_SECRETVALUE",
+    });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("jaringan mati")));
+    await plugin.setup(h.ctx as never);
+
+    const result = await h.handlers()!.status({});
+
+    expect(result.connected).toBe(true);
+    expect(result.organizationName).toBeUndefined();
+    expect(result.organizationId).toBe("org-123");
+  });
 });

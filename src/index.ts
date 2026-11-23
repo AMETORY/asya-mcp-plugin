@@ -13,6 +13,7 @@
 
 import { Plugin } from "@opencode/plugin";
 import { enroll, extractEnrollCode, type EnrollResponse } from "./enroll.ts";
+import { resolveOrganizationName } from "./organization.ts";
 import { resolveOptions } from "./options.ts";
 import { Asya, type AsyaMetadata } from "./rpc.ts";
 
@@ -103,24 +104,28 @@ export default Plugin.define({
       await ctx.integration.connect.key({ integrationID: 'asya-core', key: result.token });
 
       token = result.token;
+      // Nama organisasi bersifat pelengkap; kegagalan resolver tidak boleh
+      // menggagalkan enroll. Token tetap hanya di memori.
+      const resolvedName = await resolveOrganizationName(mcpUrl, result.token);
       metadata = {
         tokenPrefix: result.token.slice(0, 8),
         name: result.name,
         enrolledAt: new Date().toISOString(),
         organizationId: result.organization_id,
+        ...(resolvedName ? { organizationName: resolvedName } : {}),
         serverName,
       };
       // Metadata-only ke ctx.storage — tanpa `token`, tanpa `enrollmentCode`.
-      await ctx.storage.set("asya-mcp", {
-        tokenPrefix: metadata.tokenPrefix,
-        name: metadata.name,
-        enrolledAt: metadata.enrolledAt,
-        organizationId: metadata.organizationId,
-        serverName: metadata.serverName,
-      });
+      await ctx.storage.set("asya-mcp", { ...metadata });
       await applyMcp();
-      const { name, organizationId, enrolledAt, tokenPrefix } = metadata;
-      return { name, organizationId, enrolledAt, tokenPrefix };
+      const { name, organizationId, organizationName, enrolledAt, tokenPrefix } = metadata;
+      return {
+        name,
+        organizationId,
+        ...(organizationName ? { organizationName } : {}),
+        enrolledAt,
+        tokenPrefix,
+      };
     };
 
     // Satu-satunya permukaan enroll: RPC untuk TUI. Perintah server dan pesan
@@ -129,10 +134,27 @@ export default Plugin.define({
     await ctx.rpc.register(Asya, {
       connect: async (input) => enrollCommand((input as { code: string }).code),
       rotate: async (input) => enrollCommand((input as { code: string }).code),
-      status: async () => metadata
-        ? { connected: true, name: metadata.name, organizationId: metadata.organizationId,
-            enrolledAt: metadata.enrolledAt, tokenPrefix: metadata.tokenPrefix }
-        : { connected: false },
+      status: async () => {
+        if (!metadata) return { connected: false };
+        let organizationName = metadata.organizationName;
+        if (token) {
+          const resolved = await resolveOrganizationName(mcpUrl, token);
+          if (resolved) {
+            organizationName = resolved;
+            metadata = { ...metadata, organizationName: resolved };
+            await ctx.storage.set("asya-mcp", { ...metadata });
+          }
+        }
+        const { name, organizationId, enrolledAt, tokenPrefix } = metadata;
+        return {
+          connected: true,
+          name,
+          organizationId,
+          ...(organizationName ? { organizationName } : {}),
+          enrolledAt,
+          tokenPrefix,
+        };
+      },
     });
 
     ctx.tool.transform((editor) => {

@@ -5,6 +5,7 @@ import { Rpc } from "@opencode/plugin/rpc";
 export type AsyaMetadata = {
   name: string;
   organizationId: string;
+  organizationName?: string;
   enrolledAt: string;
   tokenPrefix: string;
 };
@@ -12,6 +13,7 @@ export type AsyaMetadata = {
 const metadataProperties = {
   name: { type: "string" },
   organizationId: { type: "string" },
+  organizationName: { type: "string" },
   enrolledAt: { type: "string" },
   tokenPrefix: { type: "string" },
 } as const;
