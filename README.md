@@ -106,9 +106,12 @@ login ASYA. Masukkan email ASYA; tautan sekali pakai dikirim ke email (pilihan
 Google tersedia bila diaktifkan admin). Setelah sign-in, OpenCode menyimpan token
 OAuth-nya sendiri dan memanggil tool secara otomatis.
 
-- `organization_id` wajib disertakan saat memanggil tool dalam mode OAuth,
-  misalnya `asya_list_recent_journals({ "organization_id": "<uuid>", "limit": 1 })`.
-  Nilainya dibatasi hanya pada organisasi yang masih aktif untuk akun Anda.
+- `organization_id` bersifat opsional. Bila tidak diberikan, server memakai klaim
+  `organization_id` dari access token OAuth, lalu fallback ke
+  `mcp_oauth_active_organization_id`. Agen boleh mengirim UUID organisasi lain,
+  tetapi RPC memastikan akun masih menjadi anggota aktif organisasi tersebut.
+  Contoh: `asya_list_recent_journals({ "limit": 1 })` atau
+  `asya_list_recent_sales({ "organization_id": "<uuid>", "limit": 1 })`.
 - Kredensial OAuth dikelola OpenCode. Plugin tidak menimpa entri `asya-core`
   hasil `opencode mcp add` maupun entri OAuth yang sudah ada.
 - Prasyarat produksi dan cara ceknya ada di catatan di atas.
@@ -246,8 +249,12 @@ http_headers = { Authorization = "Bearer <TOKEN>" }
 
 ### Verifikasi dan batasan
 
-Pada tiap agen, panggil `asya_list_recent_journals` dengan `{ "limit": 1 }`.
-Iterasi 1 bersifat read-only — hanya tool itu yang tersedia.
+Pada tiap agen, panggil `asya_get_active_organization` untuk melihat organisasi
+yang dipakai server, lalu uji `asya_list_recent_journals` dengan `{ "limit": 1 }`.
+Iterasi ini bersifat read-only dengan enam tool: `asya_get_active_organization`,
+`asya_list_recent_journals`, `asya_list_recent_sales`,
+`asya_list_recent_purchases`, `asya_list_stock`, dan
+`asya_get_accounting_summary`. Tidak ada tool tulis dan tidak ada query generik.
 
 Berbeda dengan OpenCode, agen-agen ini menyimpan token di file config lokal,
 sehingga token bisa masuk ke riwayat shell atau file yang tidak sengaja
