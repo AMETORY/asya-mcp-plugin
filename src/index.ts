@@ -8,18 +8,15 @@
 //   ID organisasi, serverName). Tidak pernah token atau enrollment code.
 // - Token hanya dalam memori in-memory; server asya-core menerima Authorization
 //   lewat header MCP (oauth: false).
+// - Enroll diekspos lewat RPC `asya` (connect/rotate/status). Slash command
+//   dengan nama sama disediakan TUI, bukan plugin server — hindari duplikasi.
 
 import { Plugin } from "@opencode/plugin";
 import { enroll, extractEnrollCode, type EnrollResponse } from "./enroll.ts";
 import { resolveOptions } from "./options.ts";
+import { Asya, type AsyaMetadata } from "./rpc.ts";
 
-type McpMetadata = {
-  tokenPrefix: string;
-  name: string;
-  enrolledAt: string;
-  organizationId: string;
-  serverName: string;
-};
+type McpMetadata = AsyaMetadata & { serverName: string };
 
 // Token dalam memori. Tidak ditulis ke ctx.storage, tool output, atau log.
 let token: string | null = null;
@@ -49,8 +46,10 @@ export default Plugin.define({
     // Opsi dari plugin config: `url` wajib; default lain di resolveOptions.
     const { url, functionsPath, serverName, mcpUrl } = resolveOptions(ctx.options);
 
-    // Metadata non-secret dari sesi sebelumnya (bukan token).
-    metadata = ((await ctx.storage.get("asya-mcp")) ?? {}) as McpMetadata;
+    // Metadata non-secret dari sesi sebelumnya (bukan token). Objek kosong
+    // dari storage dianggap "belum enroll" agar status tidak misleading.
+    const stored = (await ctx.storage.get("asya-mcp")) as McpMetadata | undefined;
+    metadata = stored && Object.keys(stored).length > 0 ? stored : undefined;
 
     // Daftarkan integration `asya-core` dengan method `key` —
     // OpenCode replay transform saat startup.
@@ -81,16 +80,14 @@ export default Plugin.define({
       await ctx.mcp.reload();
     };
 
-    // /asya-connect & /asya-rotate-token — eksekutor identik: tukar kode
-    // enrollasi → credential → MCP reload.
-    const enrollCommand = async (prompt: { text?: string }): Promise<string> => {
-      const code = extractEnrollCode(prompt.text ?? "");
-      if (!code) {
-        throw new Error(
-          "Kode enrollasi tidak ditemukan (8 karakter [A-Z2-9] di argumen perintah).",
-        );
+    // Eksekutor RPC `connect` dan `rotate` identik: tukar kode enrollasi →
+    // credential → MCP reload. Kembalikan HANYA metadata non-secret.
+    const enrollCommand = async (code: string): Promise<AsyaMetadata> => {
+      const extracted = extractEnrollCode(code);
+      if (!extracted) {
+        throw new Error("Kode enrollasi tidak ditemukan (8 karakter [A-Z2-9]).");
       }
-      const result: EnrollResponse = await enroll(code, { url, functionsPath });
+      const result: EnrollResponse = await enroll(extracted, { url, functionsPath });
       // Simpan plain token lewat ctx.integration.connect.key — bukan ke
       // skill, source, atau opencode.jsonc.
       await ctx.integration.connect.key({ integrationID: 'asya-core', key: result.token });
@@ -112,49 +109,20 @@ export default Plugin.define({
         serverName: metadata.serverName,
       });
       await applyMcp();
-      // Metadata-only: jangan pernah memasukkan token/kode ke pesan.
-      return `asya-core tersambung sebagai ${result.name} (org ${result.organization_id}).`;
+      const { name, organizationId, enrolledAt, tokenPrefix } = metadata;
+      return { name, organizationId, enrolledAt, tokenPrefix };
     };
 
-    // CommandDefinition.execute bertipe Promise<void>: nilai balikan executor
-    // tidak dirender TUI. Umpan balik harus dikirim sebagai pesan sesi.
-    const runEnroll = async (input: {
-      sessionID: string;
-      prompt: { text?: string };
-    }): Promise<void> => {
-      try {
-        const text = await enrollCommand(input.prompt);
-        await ctx.session.synthetic({ sessionID: input.sessionID, text });
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        await ctx.session.synthetic({
-          sessionID: input.sessionID,
-          text: `Gagal menghubungkan asya-core: ${reason}`,
-        });
-      }
-    };
-
-    ctx.command.transform((editor) => {
-      editor.add({
-        name: "asya-connect",
-        description: "Enroll asya-core MCP token dengan kode enrollasi (8 kar).",
-        execute: (input) => runEnroll(input),
-      });
-      editor.add({
-        name: "asya-rotate-token",
-        description: "Rotasi asya-core MCP token dengan kode enrollasi baru.",
-        execute: (input) => runEnroll(input),
-      });
-      editor.add({
-        name: "asya-status",
-        description: "Cek metadata enrollment asya-core MCP (tanpa token).",
-        execute: async (input) => {
-          const text = metadata
-            ? `asya-core: ${metadata.name} · org ${metadata.organizationId} · enroll ${metadata.enrolledAt} · prefix ${metadata.tokenPrefix}`
-            : "asya-core belum terenroll.";
-          await ctx.session.synthetic({ sessionID: input.sessionID, text });
-        },
-      });
+    // Satu-satunya permukaan enroll: RPC untuk TUI. Perintah server dan pesan
+    // synthetic dihapus — TUI yang menampilkan umpan balik slash command,
+    // plugin hanya mengembalikan metadata.
+    await ctx.rpc.register(Asya, {
+      connect: async (input) => enrollCommand((input as { code: string }).code),
+      rotate: async (input) => enrollCommand((input as { code: string }).code),
+      status: async () => metadata
+        ? { connected: true, name: metadata.name, organizationId: metadata.organizationId,
+            enrolledAt: metadata.enrolledAt, tokenPrefix: metadata.tokenPrefix }
+        : { connected: false },
     });
 
     ctx.tool.transform((editor) => {
