@@ -249,7 +249,18 @@ Fungsi status: panggil `context.client.rpc(Asya).status()`, tampilkan metadata v
 
 - [ ] **Step 5: Perbarui dokumentasi perintah yang sudah stale di `README.md`**
 
-Ubah bagian perintah agar menyebut dialog TUI (bukan kode sebagai argumen chat). Pertahankan penyebutan `/asya-connect`, `/asya-rotate-token`, `/asya-status`, `asya_status`. Tambah kalimat bahwa kode diminta lewat dialog dan tidak masuk chat. **Jangan** menyentuh bagian cross-agent / kredensial lain.
+Ubah bagian perintah agar menyebut dialog TUI (bukan kode sebagai argumen chat). Pertahankan penyebutan `/asya-connect`, `/asya-rotate-token`, `/asya-status`, `asya_status`. Tambah kalimat bahwa kode diminta lewat dialog dan tidak masuk chat.
+
+Sertakan pula **server default** persis ini di contoh konfigurasi instalasi dan di
+parafrasa `url`:
+
+```
+https://robrebioyfquemukodze.supabase.co/functions/v1
+```
+
+Tuliskan sebagai nilai yang dipakai di ASYA produksi / nilai contoh siap pakai.
+Opsi `url` tetap wajib diisi di kode — perubahan ini hanya dokumentasi, bukan
+perubahan `resolveOptions`. **Jangan** menyentuh bagian cross-agent / kredensial lain.
 
 - [ ] **Step 6: Tambah assertion README di `test/readme.test.ts`**
 
