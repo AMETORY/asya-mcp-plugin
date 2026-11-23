@@ -60,6 +60,13 @@ describe("README instalasi", () => {
     expect(readme).toMatch(/OpenCode Desktop/);
   });
 
+  it("mendokumentasikan dukungan slash command di Desktop", () => {
+    expect(readme).toContain("Terminal vs Desktop");
+    expect(readme).toMatch(/Desktop.{0,80}slash command/s);
+    expect(readme).not.toContain("tidak akan muncul di Desktop");
+    expect(readme).toContain("./gui-experimental");
+  });
+
   it("memuat panduan agen lain dengan placeholder token", () => {
     expect(readme).toContain("claude mcp add --transport http asya-core");
     expect(readme).toContain("[mcp_servers.asya-core]");

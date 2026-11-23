@@ -58,28 +58,27 @@ dipasang sekali; kredensial tidak perlu ditambahkan ke config.
 | `/asya-rotate-token` | Rotasi token; kode diminta lewat dialog, token lama dicabut |
 | `/asya-status` | Lihat metadata koneksi (tanpa token) lewat toast |
 
-Kode enrollasi diminta melalui dialog TUI, bukan sebagai argumen chat, sehingga
-tidak masuk transkrip sesi. Kode terdiri dari 8 karakter `[A-Z2-9]`. Tool
-`asya_status` juga tersedia untuk pemeriksaan status dari agen; keluarannya
-hanya metadata.
+Kode enrollasi diminta melalui dialog di terminal maupun Desktop, bukan sebagai
+argumen chat, sehingga tidak masuk transkrip sesi. Kode terdiri dari 8 karakter
+`[A-Z2-9]`. Tool `asya_status` juga tersedia untuk pemeriksaan status dari agen;
+keluarannya hanya metadata.
 
 ### Terminal vs Desktop
 
-Ketiga perintah di atas adalah **perintah TUI terminal**, tersedia saat
-menjalankan `opencode` di terminal. OpenCode Desktop tidak memuat komponen
-`./tui` dari sebuah plugin — Desktop hanya menambahkan panel/command dari
-plugin yang mengekspor `./gui-experimental`. Plugin ini tidak mengekspor itu,
-jadi autocomplete `/asya-connect` **tidak akan muncul di Desktop**. Ini batasan
-platform, bukan error instalasi.
+OpenCode Desktop sekarang mendukung ketiga slash command di atas lewat composer.
+Dukungan ini disediakan oleh export `./gui-experimental` dari plugin ini; kode
+enrollasi tetap diminta lewat dialog dengan input tersembunyi, bukan argumen
+chat. Menjalankan `opencode` di terminal **tanpa `--standalone`** tetap didukung
+dan memakai service yang sama dengan Desktop.
 
 Alur yang disarankan:
 
-1. Jalankan `opencode` di terminal **tanpa `--standalone`** agar memakai service
-   yang sama dengan Desktop, lalu `/asya-connect` dan isi kode di dialog.
+1. Di Desktop, ketik `/asya-connect` di composer lalu isi kode enrollasi di
+   dialog. Untuk rotasi/status, pakai `/asya-rotate-token` dan `/asya-status`.
 2. Kredensial disimpan OpenCode lewat integration `asya-core`, sehingga service
    yang dipakai Desktop ikut memuat server MCP `asya-core`.
-3. Di Desktop, pakai tool `asya_list_recent_journals` lewat percakapan biasa.
-   Untuk rotasi/status, kembali ke terminal.
+3. Setelah terhubung, pakai tool `asya_list_recent_journals` lewat percakapan
+   biasa. Terminal tetap alternatif bila dialog Desktop tidak tersedia.
 
 ## Keamanan
 
@@ -196,10 +195,16 @@ OpenCode bisa mengambil paket dari GitHub. Periksa log OpenCode untuk pesan
 (atau `asya_status`) melaporkan koneksi aktif, lalu jalankan `/reload` agar
 server `asya-core` memuat ulang kredensialnya.
 
-**Autocomplete `/asya-connect` tidak muncul di OpenCode Desktop.** Sesuai
-dijelaskan di [Terminal vs Desktop](#terminal-vs-desktop), Desktop tidak memuat
-komponen `./tui` plugin. Jalankan `opencode` di terminal untuk enroll/rotasi/
-status; Desktop memakai tool MCP `asya_list_recent_journals` seperti biasa.
+**Autocomplete `/asya-connect` tidak muncul di OpenCode Desktop.** Pastikan paket
+sudah di-update ke versi yang mengekspor `./gui-experimental`:
+
+```bash
+opencode plugin update github:AMETORY/asya-mcp-plugin
+```
+
+Lalu restart Desktop. Bila masih tidak muncul, periksa log OpenCode untuk pesan
+`failed to load plugin`. Enroll/rotasi/status tetap bisa lewat terminal sebagai
+cadangan.
 
 ## Lisensi
 
