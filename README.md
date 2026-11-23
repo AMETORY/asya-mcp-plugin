@@ -63,6 +63,24 @@ tidak masuk transkrip sesi. Kode terdiri dari 8 karakter `[A-Z2-9]`. Tool
 `asya_status` juga tersedia untuk pemeriksaan status dari agen; keluarannya
 hanya metadata.
 
+### Terminal vs Desktop
+
+Ketiga perintah di atas adalah **perintah TUI terminal**, tersedia saat
+menjalankan `opencode` di terminal. OpenCode Desktop tidak memuat komponen
+`./tui` dari sebuah plugin — Desktop hanya menambahkan panel/command dari
+plugin yang mengekspor `./gui-experimental`. Plugin ini tidak mengekspor itu,
+jadi autocomplete `/asya-connect` **tidak akan muncul di Desktop**. Ini batasan
+platform, bukan error instalasi.
+
+Alur yang disarankan:
+
+1. Jalankan `opencode` di terminal **tanpa `--standalone`** agar memakai service
+   yang sama dengan Desktop, lalu `/asya-connect` dan isi kode di dialog.
+2. Kredensial disimpan OpenCode lewat integration `asya-core`, sehingga service
+   yang dipakai Desktop ikut memuat server MCP `asya-core`.
+3. Di Desktop, pakai tool `asya_list_recent_journals` lewat percakapan biasa.
+   Untuk rotasi/status, kembali ke terminal.
+
 ## Keamanan
 
 Plain token dan kode enrollasi **tidak ditaruh** di `opencode.jsonc`, chat,
@@ -72,6 +90,81 @@ non-rahasia: prefix token, nama, waktu enrollasi, ID organisasi, dan nama server
 
 Jangan membagikan kode enrollasi: siapa pun yang memilikinya bisa menukarnya
 menjadi token aktif sampai kode itu terpakai atau kedaluwarsa.
+
+## Agen lain (Claude Code, Codex, Cursor)
+
+Endpoint MCP berupa remote HTTP dan agnostik-agent. Agen selain OpenCode tidak
+perlu plugin ini — cukup URL MCP dan header bearer token.
+
+### Mendapatkan token
+
+Di aplikasi ASYA buka **Pengaturan Organisasi → API Token (MCP) → Generate
+Token**. Dashboard menampilkan **plain token sekali** beserta tombol salin;
+setelah ditutup token tidak bisa dilihat lagi.
+
+> Kode enrollasi 8 karakter **khusus OpenCode**. Agen di bawah memakai plain
+> token dari dashboard, bukan kode enrollasi, dan tidak perlu memanggil
+> `/enroll` lewat curl.
+
+URL MCP produksi:
+`https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp`
+
+Untuk project Supabase lain, formatnya
+`https://<project>.supabase.co/functions/v1/asya-mcp/mcp`.
+
+### Claude Code
+
+```bash
+claude mcp add --transport http asya-core \
+  https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp \
+  --header "Authorization: Bearer <TOKEN>"
+claude mcp list
+```
+
+### Codex
+
+`~/.codex/config.toml` — direkomendasikan memakai environment variable agar
+token tidak tertulis di file:
+
+```toml
+[mcp_servers.asya-core]
+url = "https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp"
+bearer_token_env_var = "ASYA_MCP_TOKEN"
+```
+
+Alternatif lebih praktis tetapi lebih berisiko:
+
+```toml
+[mcp_servers.asya-core]
+url = "https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp"
+http_headers = { Authorization = "Bearer <TOKEN>" }
+```
+
+### Cursor
+
+`~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "asya-core": {
+      "url": "https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/mcp",
+      "headers": {
+        "Authorization": "Bearer <TOKEN>"
+      }
+    }
+  }
+}
+```
+
+### Verifikasi dan batasan
+
+Pada tiap agen, panggil `asya_list_recent_journals` dengan `{ "limit": 1 }`.
+Iterasi 1 bersifat read-only — hanya tool itu yang tersedia.
+
+Berbeda dengan OpenCode, agen-agen ini menyimpan token di file config lokal,
+sehingga token bisa masuk ke riwayat shell atau file yang tidak sengaja
+ter-commit. Jangan commit file config tersebut dan jangan bagikan token.
 
 ## Troubleshooting
 
@@ -102,6 +195,11 @@ OpenCode bisa mengambil paket dari GitHub. Periksa log OpenCode untuk pesan
 **Tool MCP belum bisa dipanggil setelah enroll.** Pastikan `/asya-status`
 (atau `asya_status`) melaporkan koneksi aktif, lalu jalankan `/reload` agar
 server `asya-core` memuat ulang kredensialnya.
+
+**Autocomplete `/asya-connect` tidak muncul di OpenCode Desktop.** Sesuai
+dijelaskan di [Terminal vs Desktop](#terminal-vs-desktop), Desktop tidak memuat
+komponen `./tui` plugin. Jalankan `opencode` di terminal untuk enroll/rotasi/
+status; Desktop memakai tool MCP `asya_list_recent_journals` seperti biasa.
 
 ## Lisensi
 

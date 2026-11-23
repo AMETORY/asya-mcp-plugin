@@ -52,4 +52,25 @@ describe("README instalasi", () => {
   it("troubleshooting menyebut 404 enroll", () => {
     expect(readme).toMatch(/Enroll gagal: HTTP 404/);
   });
+
+  it("mendokumentasikan batasan TUI terminal vs Desktop", () => {
+    expect(readme).toContain("Terminal vs Desktop");
+    expect(readme).toContain("./gui-experimental");
+    expect(readme).toContain("tanpa `--standalone`");
+    expect(readme).toMatch(/OpenCode Desktop/);
+  });
+
+  it("memuat panduan agen lain dengan placeholder token", () => {
+    expect(readme).toContain("claude mcp add --transport http asya-core");
+    expect(readme).toContain("[mcp_servers.asya-core]");
+    expect(readme).toContain("bearer_token_env_var");
+    expect(readme).toContain('"mcpServers"');
+    expect(readme).toContain("<TOKEN>");
+  });
+
+  it("tidak mengandung token atau kode enrollasi nyata", () => {
+    expect(readme).not.toMatch(/asya_mcp[A-Za-z0-9_-]{12,}/);
+    expect(readme).not.toMatch(/Bearer\s+[A-Za-z0-9_-]{20,}/);
+    expect(readme).not.toMatch(/(?<![A-Za-z0-9\[-])[A-Z2-9]{8}(?![A-Za-z0-9\]-])/);
+  });
 });
