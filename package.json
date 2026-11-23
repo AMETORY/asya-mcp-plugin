@@ -8,10 +8,24 @@
     ".": "./src/index.ts",
     "./tui": "./src/tui.ts",
     "./rpc": "./src/rpc.ts",
-    "./gui-experimental": "./src/gui.ts"
+    "./gui-experimental": "./prebuilt/gui.cjs"
   },
-  "files": ["src", "README.md", "LICENSE"],
-  "scripts": { "test": "vitest run" },
-  "dependencies": { "@opencode/plugin": "latest" },
-  "devDependencies": { "typescript": "^5.8.3", "vitest": "^4.1.5" }
+  "files": [
+    "src",
+    "prebuilt/gui.cjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build-gui.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opencode/plugin": "latest"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.5"
+  }
 }

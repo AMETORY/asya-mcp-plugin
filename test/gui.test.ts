@@ -9,9 +9,58 @@ const read = (rel: string) => readFileSync(resolve(root, rel), "utf8");
 describe("plugin GUI asya-core", () => {
   const gui = () => read("src/gui.ts");
 
-  it("paket mengekspor ./gui-experimental", () => {
+  it("paket mengekspor bundle CommonJS ./gui-experimental", () => {
     const pkg = JSON.parse(read("package.json"));
-    expect(pkg.exports["./gui-experimental"]).toBe("./src/gui.ts");
+    const target = pkg.exports["./gui-experimental"];
+    // Resolver Desktop hanya menerima path yang cocok /\.c?js$/; sumber .ts ditolak.
+    expect(target).toMatch(/\.c?js$/);
+    expect(target).toBe("./prebuilt/gui.cjs");
+    const bundle = read(target);
+    expect(bundle).toContain("module.exports");
+    expect(bundle).toContain('require("@opencode/plugin/gui")');
+    expect(bundle).toContain('require("@opencode/plugin/rpc")');
+    for (const name of ["asya-connect", "asya-rotate-token", "asya-status"]) {
+      expect(bundle).toContain(`slash: { name: "${name}" }`);
+    }
+  });
+
+  it("bundle bisa dimuat require-shim Desktop yang hanya menyediakan modul bersama", () => {
+    const pkg = JSON.parse(read("package.json"));
+    const code = read(pkg.exports["./gui-experimental"]);
+    const Command = { __kind: "Command" };
+    const shared: Record<string, unknown> = {
+      "@opencode/plugin/gui": {
+        Plugin: { define: (value: unknown) => value },
+        Command,
+      },
+      "@opencode/plugin/rpc": { Rpc: { define: (value: unknown) => value } },
+    };
+    const requested: string[] = [];
+    const mod = { exports: {} as Record<string, any> };
+
+    Function("require", "module", "exports", code)(
+      (id: string) => {
+        requested.push(id);
+        if (id in shared) return shared[id];
+        throw new Error(`modul tidak dibagikan: ${id}`);
+      },
+      mod,
+      mod.exports,
+    );
+
+    expect(requested).toEqual(["@opencode/plugin/gui", "@opencode/plugin/rpc"]);
+    const plugin = mod.exports.default;
+    expect(typeof plugin.setup).toBe("function");
+    const names: string[] = [];
+    plugin.setup({
+      add: (kind: unknown, cmd: { slash: { name: string } }) => {
+        if (kind === Command) names.push(cmd.slash.name);
+      },
+      dialogs: {},
+      client: {},
+      toast: {},
+    });
+    expect(names).toEqual(["asya-connect", "asya-rotate-token", "asya-status"]);
   });
 
   it("mendaftarkan tiga slash command dengan nama yang sama dengan TUI", () => {

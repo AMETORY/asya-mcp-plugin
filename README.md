@@ -71,6 +71,10 @@ enrollasi tetap diminta lewat dialog dengan input tersembunyi, bukan argumen
 chat. Menjalankan `opencode` di terminal **tanpa `--standalone`** tetap didukung
 dan memakai service yang sama dengan Desktop.
 
+Desktop memuat bundle CommonJS yang sudah di-build di `prebuilt/gui.cjs` (bukan
+sumber `.ts`). Setelah mengubah `src/gui.ts`, jalankan `npm run build` lalu commit
+ulang bundle tersebut agar pengguna yang meng-update plugin mendapat versi baru.
+
 Alur yang disarankan:
 
 1. Di Desktop, ketik `/asya-connect` di composer lalu isi kode enrollasi di
