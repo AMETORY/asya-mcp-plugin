@@ -25,15 +25,17 @@ Tambahkan paket ini ke `opencode.jsonc`:
     {
       "package": "github:AMETORY/asya-mcp-plugin",
       "options": {
-        "url": "https://<project>.supabase.co/functions/v1"
+        "url": "https://robrebioyfquemukodze.supabase.co/functions/v1"
       }
     }
   ]
 }
 ```
 
-`url` **wajib diisi** — plugin menolak startup tanpa opsi ini. Ganti
-`<project>` dengan project Supabase Anda. Opsi lain bersifat opsional:
+`url` **wajib diisi** — plugin menolak startup tanpa opsi ini. Contoh di atas
+memakai `https://robrebioyfquemukodze.supabase.co/functions/v1`, server ASYA
+produksi yang bisa dipakai apa adanya. Untuk project Supabase sendiri, ganti
+dengan `https://<project>.supabase.co/functions/v1`. Opsi lain bersifat opsional:
 
 | Opsi | Default | Fungsi |
 | --- | --- | --- |
@@ -52,12 +54,14 @@ dipasang sekali; kredensial tidak perlu ditambahkan ke config.
 
 | Perintah | Fungsi |
 | --- | --- |
-| `/asya-connect <kode>` | Tukar kode enrollasi 8 karakter menjadi kredensial |
-| `/asya-rotate-token <kode>` | Rotasi dengan kode dari token baru; token lama dicabut |
-| `/asya-status` | Lihat metadata koneksi (tanpa token) |
+| `/asya-connect` | Hubungkan asya-core; kode enrollasi diminta lewat dialog |
+| `/asya-rotate-token` | Rotasi token; kode diminta lewat dialog, token lama dicabut |
+| `/asya-status` | Lihat metadata koneksi (tanpa token) lewat toast |
 
-Kode enrollasi terdiri dari 8 karakter `[A-Z2-9]`. Tool `asya_status` juga
-tersedia untuk pemeriksaan status dari agen; keluarannya hanya metadata.
+Kode enrollasi diminta melalui dialog TUI, bukan sebagai argumen chat, sehingga
+tidak masuk transkrip sesi. Kode terdiri dari 8 karakter `[A-Z2-9]`. Tool
+`asya_status` juga tersedia untuk pemeriksaan status dari agen; keluarannya
+hanya metadata.
 
 ## Keamanan
 
@@ -85,18 +89,19 @@ Edge Functions → Secrets → `MCP_TOKEN_ENCRYPTION_KEY`, lalu deploy ulang
 `asya-mcp`. Jangan pakai `openssl rand -base64 32` apa adanya: keluarannya
 mengandung `=` dan ditolak decoder.
 
-**`Enroll gagal: HTTP 404`.** Ini beda dengan 404 tool MCP di bawah. Periksa
-`url` dan `functionsPath`: keduanya tidak boleh menggandakan `/functions/v1`.
-Dengan konfigurasi bawaan, hasilnya harus
-`https://<project>.supabase.co/functions/v1/asya-mcp/enroll`.
+**`Enroll gagal: HTTP 404`.** Ini spesifik endpoint enroll, bukan gangguan
+tool MCP. Periksa `url` dan `functionsPath`: keduanya tidak boleh menggandakan
+`/functions/v1`.
+Dengan contoh konfigurasi ASYA produksi di atas, hasilnya harus
+`https://robrebioyfquemukodze.supabase.co/functions/v1/asya-mcp/enroll`.
 
 **Plugin gagal dimuat setelah `/reload`.** Pastikan repo publik tersedia dan
 OpenCode bisa mengambil paket dari GitHub. Periksa log OpenCode untuk pesan
 `failed to load plugin`.
 
-**Tool MCP belum bisa dipanggil.** Endpoint `/mcp` belum diimplementasikan dan
-mengembalikan 404. Onboarding dan rotasi kredensial tetap berfungsi; pemanggilan
-tool baru akan tersedia setelah endpoint tersebut dibangun.
+**Tool MCP belum bisa dipanggil setelah enroll.** Pastikan `/asya-status`
+(atau `asya_status`) melaporkan koneksi aktif, lalu jalankan `/reload` agar
+server `asya-core` memuat ulang kredensialnya.
 
 ## Lisensi
 

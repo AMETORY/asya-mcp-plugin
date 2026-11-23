@@ -13,6 +13,8 @@ describe("package.json", () => {
     expect(pkg.type).toBe("module");
     expect(pkg.dependencies["@opencode/plugin"]).toBeDefined();
     expect(pkg.exports["."]).toBe("./src/index.ts");
+    expect(pkg.exports["./tui"]).toBe("./src/tui.ts");
+    expect(pkg.exports["./rpc"]).toBe("./src/rpc.ts");
   });
 });
 
@@ -45,5 +47,24 @@ describe("sumber plugin", () => {
   it("enroll memakai POST /enroll", () => {
     expect(enrollSrc).toContain("/enroll");
     expect(enrollSrc).toContain("JSON.stringify({ code");
+  });
+
+  it("perintah enroll hanya lewat RPC, bukan perintah chat", () => {
+    expect(src).not.toContain("ctx.command.transform");
+    expect(src).not.toContain("synthetic(");
+    expect(src).toContain("ctx.rpc.register(Asya");
+  });
+
+  it("RPC tidak mengembalikan token", () => {
+    expect(read("src/rpc.ts")).not.toContain("token:");
+  });
+
+  it("TUI meminta kode lewat dialog tanpa menyimpan atau mencatatnya", () => {
+    const tui = read("src/tui.ts");
+    expect(tui).toContain("dialog.prompt");
+    expect(tui).toContain("context.client.rpc(Asya)");
+    expect(tui).toContain("isValidEnrollCode(");
+    expect(tui).not.toContain("console.log");
+    expect(tui).not.toContain("integration.connect.key");
   });
 });

@@ -24,7 +24,18 @@ describe("README instalasi", () => {
     }
   });
 
-  it("jujur soal endpoint /mcp dan aturan token", () => {
+  it("perintah enroll memakai dialog, bukan argumen chat", () => {
+    expect(readme).toMatch(/dialog/i);
+    expect(readme).toMatch(/kode enrollasi/i);
+  });
+
+  it("contoh config memuat server produksi ASYA", () => {
+    const url = "https://robrebioyfquemukodze.supabase.co/functions/v1";
+    expect(readme).toContain(`"url": "${url}"`);
+    expect(readme.split(url).length - 1).toBeGreaterThanOrEqual(2);
+  });
+
+  it("jujur soal HTTP 404 enroll dan aturan token", () => {
     expect(readme).toMatch(/404/);
     expect(readme).toMatch(/token/i);
     expect(readme).toMatch(/tidak ditaruh/i);
@@ -38,7 +49,7 @@ describe("README instalasi", () => {
     expect(readme).toContain("`<url>/asya-mcp/mcp`");
   });
 
-  it("troubleshooting membedakan 404 enroll dari 404 tool MCP", () => {
+  it("troubleshooting menyebut 404 enroll", () => {
     expect(readme).toMatch(/Enroll gagal: HTTP 404/);
   });
 });
