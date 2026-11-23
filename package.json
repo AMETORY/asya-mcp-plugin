@@ -1,0 +1,12 @@
+{
+  "name": "opencode-asya-mcp",
+  "version": "0.1.0",
+  "private": false,
+  "description": "OpenCode plugin: enroll bearer token ASYA MCP via kode sekali pakai.",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "files": ["src", "README.md", "LICENSE"],
+  "scripts": { "test": "vitest run" },
+  "dependencies": { "@opencode/plugin": "latest" },
+  "devDependencies": { "typescript": "^5.8.3", "vitest": "^4.1.5" }
+}
